@@ -1,0 +1,198 @@
+---
+title: "Assignment 2"
+author: "Harina Chohan - 666983"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## BY: Harina Chohan - 666983
+
+## DSA2050: Data Science methodology
+
+## Lecturer: Nancy Khadioli
+
+## Predicting Student Exam Scores Using Study Hours
+
+### Problem
+
+Students always wonder if there is a point in spending time studying for an exam. Are the number of hours studied significant enough to get a good score?
+
+Hence, the objective will be to build a model to predict the score of a student in their exam based on how many hours they spent studying and also to see its correlation (whether positive or negative) and make analysis and conclusions through them.
+
+Hypothesis: The Hours spent studying is correlated to the Exam score a student gets.
+
+Null hypothesis is that the exam score received has no correlation to the hours a student spent studying.
+
+### Data understanding & Cleaning
+
+Since the data set is only of 10 rows, there is no reason to set seed.
+
+#### Data creation
+
+```{r}
+library(caTools)
+# Creating a dataframe of student data
+df <- data.frame(Hours_Studied = c(1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0),
+                 Exam_Score = c(52, 56, 60, 62, 65, 68, 70, 75, 78, 82))
+
+# Spliting the dataset to 80% training and 20% test
+split <- sample.split(df$Hours_Studied, SplitRatio = 0.8)
+trainingset <- subset(df, split == TRUE)
+testset <- subset(df, split == FALSE)
+
+# Dataframe 
+print(df)
+```
+
+This shows that there are two columns and 10 rows:
+
+-   Hours_Studied - double data type
+
+-   Exam_Score - double data type
+
+I would change the data type of Exam_Score to integer, however, it is possible to get a decimal score in an exam.
+
+#### Data preparation
+
+```{r}
+
+# Summary Statistics
+summary(df)
+
+# How many duplicate values
+duplicated(df)
+```
+
+The summary shows that there are no missing values and the duplicated() function shows that there are no duplicate values either.
+
+The data makes sense and is sufficient for a linear regression model for predicting the exam score based on how long a student has studied for the exam.
+
+#### Modeling
+
+```{r}
+
+par(mfrow = c(1,2))
+# Plotting a box plot to see outliers
+# Box plot for hours studied
+boxplot(trainingset$Hours_Studied, main = "Hours_studied", sub = paste("Outliers", boxplot.stats(trainingset$Hours_Studied)$out))
+
+# Box plot for Exam score
+boxplot(trainingset$Exam_Score, main = "Exam_Score", sub = paste("Outliers", boxplot.stats(trainingset$Exam_Score)$out))
+```
+
+The data look quite even with the mean being close to the median. Both graphs show no outliers and that the distribution is not skewed
+
+```{r}
+# Finding correlation
+cor(trainingset$Hours_Studied, trainingset$Exam_Score)
+```
+
+The two variables are very positively correlated as 0.9958207 is very close to 1.
+
+### Model building
+
+```{r}
+# Simple linear regression model to the training set
+lm_model <- lm(formula = Exam_Score ~ Hours_Studied,
+               data = trainingset)
+
+# Summary of the model
+summary(lm_model)
+```
+
+dv = exam score
+
+iv = hours studied
+
+According to the summary of the model, the equation for the regression line is:
+
+y = 42.7457 + 6.4740x + 0.5634
+
+#### Residuals
+
+Is the difference between the observed y value and the predicted y value
+
+At its minimum the regression line overestimated the y value by 0.6416 and at its maximum it underestimated the y value by 1.0694.
+
+The regression model fairly symmetrical.
+
+The residual standard error of 0.1297 on 6 degrees of freedom suggest that it is a good model fit with relatively small prediction errors.
+
+This difference is not large hence, the data does not have outliers and the model seems valid.
+
+#### Coefficients
+
+The estimate intercept value is the Exam score if the student did not study at all (Hours_Studied is 0). According to the model, a hypothetical student who studied for 0 hours is predicted to get approximately a 42.7457% in their exam. This shows that the lowest mark the student can get is a 42-43%, however, a student can definitely get lower than that which is a downside of the small sample size.
+
+The regression coefficient is 6.4740, this is the multiple that y changes when x increases. Since it is a positive value, the two variables are positively correlated; as the hours studying increases by 1, the exam score increases by about 6.5%, holding all other factors constant.
+
+Both coefficients show strong statistical significance with p values below 0.05, hence the relationship between study hours and exam scores is real and not due to chance.
+
+Both the intercept and X coefficient are highly statistically significant (p\<0.001), hence the strong relationship is not due to chance. This is confirmed by P value's 3 stars which means x is of very high statistical significance.
+
+#### R squared value
+
+The R-square value is 0.9967, which means that 99.67% of the variation in Exam scores is explained by Hours spent studying.
+
+This is a very high R-squared value which indicates that the time spent studying alone accounts for nearly all the differences in exam scores among the students.
+
+It confirms that there is an extremely strong linear relationship between hours studied and exam performance in this data set.
+
+### Prediction
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+library(predict3d)
+# Visualisation
+pred_graph <- ggPredict(lm_model, digits = 1, show.point = TRUE, show.error = TRUE, se = TRUE, xpos = 0.5)
+```
+
+The graph above shows the regression line and the error/residual lines between the points and the line. As it shows, the association between both variables is linear and the model looks very reliable to make predictions. Hence, plot shows that the model was a good fit.
+
+### Predictions
+
+```{r}
+# New dataframe with new input values to predict
+new_data <- data.frame(Hours_Studied = c(0, 1.2, 3.4, 6.2))
+
+# Prediction using the model
+predicted_time <- data.frame(predict(lm_model, newdata = new_data))
+
+# Adding the predictive score and the new data to a data frame
+pred_df <- data.frame(Hours_Studied = new_data$Hours_Studied, Exam_Score = predicted_time$predict.lm_model..newdata...new_data.)
+
+
+# Display
+print(pred_df)
+
+# plot the data frame
+pred_plot <- plot(pred_df, aes(x = Hours_Studied, y = Exam_Score)) +
+  geom_point(shape = 3)
+```
+
+The model predicts that 0, 1.2, 3.4, 4.45, 6.2 hours of studying will give you the approximate score of 43.14, 64.44, and 81.99 respectively.
+
+### Evaluation metrics
+
+```{r}
+# Residual mean and distribution
+plot(trainingset$Exam_Score, resid(lm_model),
+     ylab = "Residuals", xlab = "Price",
+     main = "Residual plot")
+mean(lm_model$residuals)
+```
+
+### Reflection and reporting
+
+All the data and plots and the model show that the number of hours spent studying is highly positively correlated to the exam score, hence, students should spend the time studying if they want a good exam score.
+
+The mean residual is a very small number, hence the model is reliable and valid for this sample. However, the sample is quite small so for the data to be generalized, it needs to be a larger sample size.
+
+In conclusion, the score a student gets in an exam is governed by the hours they spent studying for that exam, and therefore, it is possible to predict the score based on how many hours they have studied.
